@@ -1,0 +1,5 @@
+{
+  "title": "Event Request Panel",
+  "description": "Interactive panel for collecting event search inputs and showing event API results.",
+  "lightning:type": "@apexClassType/c__EventPanelState"
+}

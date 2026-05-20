@@ -1,0 +1,129 @@
+<template>
+    <div class="erp-panel">
+        <header class="erp-header">
+            <h2 class="erp-title">{title}</h2>
+            <p class="erp-prompt">{prompt}</p>
+        </header>
+
+        <template lwc:if={showForm}>
+            <div class="erp-form">
+                <lightning-input
+                    label="Subject"
+                    value={subject}
+                    onchange={handleSubjectChange}
+                    disabled={inputsDisabled}
+                    required
+                ></lightning-input>
+
+                <lightning-input
+                    type="date"
+                    label="Date"
+                    value={eventDate}
+                    onchange={handleDateChange}
+                    disabled={inputsDisabled}
+                    required
+                ></lightning-input>
+
+                <lightning-input
+                    label="Range"
+                    value={rangeValue}
+                    onchange={handleRangeChange}
+                    disabled={inputsDisabled}
+                    placeholder="e.g. 10km"
+                ></lightning-input>
+
+                <template lwc:if={radioOptions.length}>
+                    <lightning-radio-group
+                        label="Options"
+                        options={radioOptions}
+                        value={selectedOption}
+                        onchange={handleOptionChange}
+                        disabled={inputsDisabled}
+                        required
+                    ></lightning-radio-group>
+                </template>
+
+                <fieldset class="erp-test-controls">
+                    <legend>Test controls</legend>
+                    <lightning-input
+                        type="number"
+                        label="Simulated delay (ms)"
+                        value={simulatedDelayMs}
+                        min="0"
+                        max="30000"
+                        step="100"
+                        onchange={handleDelayChange}
+                        disabled={inputsDisabled}
+                    ></lightning-input>
+                    <lightning-input
+                        type="checkbox"
+                        label="Force error"
+                        checked={forceError}
+                        onchange={handleForceErrorChange}
+                        disabled={inputsDisabled}
+                    ></lightning-input>
+                </fieldset>
+
+                <template lwc:if={validationMessage}>
+                    <p class="erp-validation" role="alert">{validationMessage}</p>
+                </template>
+
+                <template lwc:if={errorMessage}>
+                    <div class="erp-error" role="alert">
+                        <p>{errorMessage}</p>
+                        <lightning-button
+                            label="Retry"
+                            variant="brand"
+                            onclick={handleRetry}
+                            disabled={inputsDisabled}
+                        ></lightning-button>
+                    </div>
+                </template>
+
+                <div class="erp-actions">
+                    <lightning-button
+                        label="Request"
+                        variant="brand"
+                        onclick={handleRequest}
+                        disabled={inputsDisabled}
+                    ></lightning-button>
+                </div>
+
+                <template lwc:if={isLoading}>
+                    <div class="erp-loading">
+                        <lightning-spinner alternative-text="Searching" size="small"></lightning-spinner>
+                        <p>{loadingMessage}</p>
+                    </div>
+                </template>
+            </div>
+        </template>
+
+        <template lwc:if={showResults}>
+            <div class="erp-results">
+                <p class="erp-status">Success — showing upcoming events.</p>
+                <template lwc:if={hasEvents}>
+                    <ul class="erp-event-list">
+                        <template for:each={events} for:item="evt">
+                            <li key={evt.id} class="erp-event-card">
+                                <h3>{evt.title}</h3>
+                                <p class="erp-event-when">{evt.startDateTime} – {evt.endDateTime}</p>
+                                <p class="erp-event-where">{evt.location}</p>
+                                <p>{evt.summary}</p>
+                                <template lwc:if={evt.url}>
+                                    <a href={evt.url} target="_blank" rel="noopener noreferrer">Details</a>
+                                </template>
+                            </li>
+                        </template>
+                    </ul>
+                </template>
+                <template lwc:else>
+                    <p>No matching events were found.</p>
+                </template>
+                <lightning-button
+                    label="New search"
+                    onclick={handleNewSearch}
+                ></lightning-button>
+            </div>
+        </template>
+    </div>
+</template>

@@ -1,0 +1,105 @@
+.erp-panel {
+    display: block;
+    padding: var(--slds-g-spacing-medium, 0.75rem);
+    border: 1px solid var(--slds-g-color-border-base-1, #c9c9c9);
+    border-radius: var(--slds-g-radius-border-2, 0.25rem);
+    background: var(--slds-g-color-surface-1, #ffffff);
+    max-width: 36rem;
+}
+
+.erp-header {
+    margin-bottom: var(--slds-g-spacing-small, 0.5rem);
+}
+
+.erp-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.erp-prompt {
+    font-size: 0.875rem;
+    color: var(--slds-g-color-neutral-base-50, #444444);
+    margin: 0;
+}
+
+.erp-form {
+    display: grid;
+    gap: var(--slds-g-spacing-small, 0.5rem);
+}
+
+.erp-test-controls {
+    border: 1px dashed var(--slds-g-color-border-base-1, #c9c9c9);
+    border-radius: var(--slds-g-radius-border-2, 0.25rem);
+    padding: var(--slds-g-spacing-small, 0.5rem);
+}
+
+.erp-test-controls legend {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--slds-g-color-neutral-base-50, #444444);
+}
+
+.erp-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.erp-loading {
+    display: flex;
+    align-items: center;
+    gap: var(--slds-g-spacing-small, 0.5rem);
+    padding-top: var(--slds-g-spacing-small, 0.5rem);
+}
+
+.erp-validation {
+    color: var(--slds-g-color-error-base-40, #ba0517);
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+.erp-error {
+    border: 1px solid var(--slds-g-color-error-base-40, #ba0517);
+    border-radius: var(--slds-g-radius-border-2, 0.25rem);
+    padding: var(--slds-g-spacing-small, 0.5rem);
+    background: var(--slds-g-color-error-container-1, #fde7e9);
+    display: grid;
+    gap: var(--slds-g-spacing-x-small, 0.25rem);
+}
+
+.erp-results {
+    display: grid;
+    gap: var(--slds-g-spacing-small, 0.5rem);
+}
+
+.erp-status {
+    margin: 0;
+    font-weight: 600;
+    color: var(--slds-g-color-success-base-40, #2e844a);
+}
+
+.erp-event-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: var(--slds-g-spacing-small, 0.5rem);
+}
+
+.erp-event-card {
+    border: 1px solid var(--slds-g-color-border-base-1, #c9c9c9);
+    border-radius: var(--slds-g-radius-border-2, 0.25rem);
+    padding: var(--slds-g-spacing-small, 0.5rem);
+}
+
+.erp-event-card h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 0.9375rem;
+}
+
+.erp-event-when,
+.erp-event-where {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--slds-g-color-neutral-base-50, #444444);
+}
