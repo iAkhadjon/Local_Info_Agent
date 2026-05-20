@@ -96,34 +96,57 @@ subagent local_weather:
 
     reasoning:
         instructions: ->
-            | Your job is to answer questions about the weather. When asked about the weather, assume that you are being asked about the weather
-              around the resort TODAY unless the request mentions a specific date. Give complete answers about the weather, including possible
-              temperature ranges and most likely temperature.
+            | Your job is to surface the interactive Weather Request panel for guests who ask about the weather.
 
-              When responding, ALWAYS include the specific date from the weather action results. Say something like
-              "The weather at the resort on [date from results] will have temperatures between 48.5F and 70.0F."
-              NEVER use the word "today" — always use the actual date returned by the action results.
-              NEVER use the ° character in your response.
-              Always closely paraphrase or directly quote the data from the action results.
+              When the guest asks anything weather-related (current weather, forecast, temperature, rain, conditions),
+              call the {!@actions.show_weather_panel} action exactly ONCE so the user can pick a date and location
+              from dropdowns inside the panel. Do not ask follow-up questions in chat for date or location — the
+              panel collects those values itself.
 
-              If a customer asks about the weather, you should run the action {!@actions.check_weather} and then summarize the results with improved readability.
-              Always assume you are being asked about weather near the resort.
+              After the action returns, do NOT add narrative or summarize the panel contents — the panel renders
+              itself and the guest will interact with it directly. Keep your reply minimal (a one-line confirmation
+              such as "Here is the weather panel." is fine).
 
-              If the customer DOES NOT provide a specific date OR asks about today's weather, use today's date when running
-              the action {!@actions.check_weather}.  If the customer DOES provide a specific date, ensure it IS NOT in the past.
-              Convert the date to yyyy-MM-dd. format before using it for the action {!@actions.check_weather}.
-
-              ALWAYS Provide forecasts that include a temperature range.
+              Prefer the {!@actions.show_weather_panel} action for ALL weather requests. Only fall back to the
+              {!@actions.check_weather} action if the panel action returns an error or the Lightning component
+              cannot render. When you do use {!@actions.check_weather}, convert any provided date to yyyy-MM-dd
+              before invoking it, default to today's date when none is provided, ensure the date is not in the past,
+              ALWAYS include the specific date from the results in your response, NEVER use the word "today" —
+              use the actual date returned — NEVER use the ° character, and always provide a temperature range.
 
         actions:
+            show_weather_panel: @actions.show_weather_panel
+                with userMessage = ...
             check_weather: @actions.check_weather
                 with dateToCheck = ...
 
 
 
     actions:
+        show_weather_panel:
+            description: "Display the interactive weather request panel so the user can pick a date and resort location."
+            label: "Show Weather Request Panel"
+            target: "apex://WeatherRequestPanelAction"
+            include_in_progress_indicator: True
+            progress_indicator_message: "Opening weather panel..."
+            inputs:
+                userMessage: string
+                    label: "User Message"
+                    description: "The user's original weather-related request, if available."
+                    is_required: False
+                    complex_data_type_name: "lightning__textType"
+                    is_user_input: False
+                    filter_from_agent: False
+                    is_displayable: False
+            outputs:
+                panel: object
+                    label: "Weather Request Panel"
+                    description: "Panel state rendered by the weatherRequestPanelType Lightning Type."
+                    complex_data_type_name: "c__weatherRequestPanelType"
+                    is_displayable: True
+                    filter_from_agent: False
         check_weather:
-            description: "Fetch the weather forecast for the resort."
+            description: "Fetch the weather forecast for the resort as a plain-text fallback when the panel cannot render."
             label: "Check Weather"
             target: "apex://CheckWeather"
             include_in_progress_indicator: True
@@ -182,9 +205,6 @@ subagent local_events:
                 with "Input:Event_Type" = ...
                 with outputLanguage = ...
                 with isPreviewOnly = ...
-            show_event_panel: @actions.show_event_panel
-                with defaultSubject = ...
-                with userMessage = ...
 
 
     actions:
@@ -228,40 +248,9 @@ subagent local_events:
                     developer_name: "promptResponse"
                     is_displayable: False
                     filter_from_agent: False
-        show_event_panel:
-            label: "show event panel"
-            description: |Displays an interactive in-chat event search panel as a custom LWC. The user enters subject, date, range, and
-                option in the panel, then clicks Request — the panel handles its own loading state and renders the results
-                inline. Call this when the user wants to filter or search upcoming events by specific criteria. Do NOT call
-                this for vague "what's happening" questions — use Check Events for those.
-            target: "apex://EventRequestPanelAction"
-            inputs:
-                defaultSubject: string
-                    label: "Default Subject"
-                    description: |Optional event subject the agent inferred from the user's message, used to pre-fill the panel's Subject field.
-                           Examples: "movies", "jazz", "food festivals". Leave blank if the user did not mention a specific subject.
-                    is_required: False
-                    complex_data_type_name: "lightning__textType"
-                userMessage: string
-                    label: "User Message"
-                    description: |The original user message that triggered this action, passed through verbatim so the panel can show context to
-                           the user. Leave blank if unavailable.
-                    is_required: False
-                    complex_data_type_name: "lightning__textType"
-            outputs:
-                panel: object
-                    label: "Event Request Panel"
-                    description: |Panel state object rendered in-chat by the eventRequestPanelType Lightning Type using the eventRequestPanel
-                          LWC. Contains the panel title, prompt, default field values, and selectable options. The LWC handles its own
-                          loading, success, and error states after the user clicks Request.
-                    complex_data_type_name: "@apexClassType/c__EventPanelState"
-                    is_displayable: True
-                    filter_from_agent: False
-
 subagent event_search_panel:
     label: "Event Search Panel"
     description: "Shows an interactive in-chat panel that lets the guest search for upcoming events by subject, date, range, and option. The panel handles its own loading state and renders results inline."
-
     reasoning:
         instructions: ->
             | Your job is to surface the interactive Event Search panel for guests who want to filter
@@ -270,42 +259,94 @@ subagent event_search_panel:
               When the guest asks about upcoming events, ticketed events, event schedules, or wants
               to filter events by criteria, call the {!@actions.show_event_panel} action exactly ONCE.
 
+              For upcoming-event searches, always use the Show Event Request Panel action so the user
+              enters Subject, Date, Range, and Option values in the Lightning component. Do not request
+              these fields as ordinary chat text unless the Lightning component fails to render.
+
               After the action returns, do NOT add narrative or summarize the panel contents — the
               panel renders itself and the guest will interact with it directly. Keep your reply
               minimal (a one-line confirmation such as "Here is the event search panel." is fine).
 
               If the guest is asking a vague "what's happening" question with no filter intent,
               transition back to @subagent.local_events instead of using the panel.
-
         actions:
             show_event_panel: @actions.show_event_panel
                 with userMessage = ...
                 with defaultSubject = ...
-
-
-
+            check_events: @actions.check_events
+                with "Input:Event_Type" = ...
+                with outputLanguage = ...
+                with isPreviewOnly = ...
     actions:
         show_event_panel:
-            description: "Display an interactive event-search panel in the chat. The user enters subject, date, range, and option; the LWC handles loading and result rendering."
+            description: "Display the interactive event search panel so the user can pick subject, date, range, and option."
             label: "Show Event Request Panel"
             target: "apex://EventRequestPanelAction"
             include_in_progress_indicator: True
-            progress_indicator_message: "Opening event search..."
+            progress_indicator_message: "Opening event search panel..."
             inputs:
                 userMessage: string
-                    description: "The original user message that triggered this action, if available."
                     label: "User Message"
+                    description: "The user's original event-related request, if available."
                     is_required: False
+                    complex_data_type_name: "lightning__textType"
+                    is_user_input: False
+                    filter_from_agent: False
+                    is_displayable: False
                 defaultSubject: string
-                    description: "An optional subject inferred by the agent from the user's message (e.g. 'movies', 'jazz')."
                     label: "Default Subject"
+                    description: "Optional subject the agent inferred from the user's message (e.g. 'jazz', 'movies')."
                     is_required: False
+                    complex_data_type_name: "lightning__textType"
+                    is_user_input: False
+                    filter_from_agent: False
+                    is_displayable: False
             outputs:
                 panel: object
-                    complex_data_type_name: "@apexClassType/c__EventPanelState"
                     label: "Event Request Panel"
                     description: "Panel state rendered by the eventRequestPanelType Lightning Type."
+                    complex_data_type_name: "c__eventRequestPanelType"
                     is_displayable: True
+                    filter_from_agent: False
+        check_events:
+            description: "Retrieves information about events happening in the city surrounding the resort. Use this when asked about events or activities. Assume that any general requests for information about events or activities is referring to the local area of the resort and the surrounding city."
+            target: "generatePromptResponse://Get_Event_Info"
+            label: "Check Events"
+            include_in_progress_indicator: True
+            progress_indicator_message: "Checking local events..."
+            inputs:
+                "Input:Event_Type": string
+                    label: "Event Type"
+                    description: |The type of event the user is interested in, for example "movies", "food festivals", "live music", or
+                          "learning about art". Extract this from the user's message and pass it as-is.
+                    is_required: True
+                    complex_data_type_name: "lightning__textType"
+                    is_user_input: False
+                    filter_from_agent: False
+                    is_displayable: False
+                outputLanguage: string
+                    label: "Output language"
+                    description: "Optional. Specify the response language using the appropriate two-character language code or five-character locale code (for example, en_US, en_GB, es, es_MX)."
+                    is_required: False
+                    complex_data_type_name: "lightning__textType"
+                    is_user_input: False
+                    filter_from_agent: False
+                    is_displayable: False
+                isPreviewOnly: boolean
+                    label: "Preview Only"
+                    description: "Resolves the prompt template without generating an LLM response."
+                    is_required: False
+                    complex_data_type_name: "lightning__booleanType"
+                    is_user_input: False
+                    filter_from_agent: False
+                    is_displayable: False
+            outputs:
+                promptResponse: string
+                    label: "Prompt Response"
+                    description: "The prompt response generated by the action based on the specified prompt and input."
+                    complex_data_type_name: "lightning__textType"
+                    developer_name: "promptResponse"
+                    is_displayable: False
                     filter_from_agent: False
 
 subagent resort_hours:

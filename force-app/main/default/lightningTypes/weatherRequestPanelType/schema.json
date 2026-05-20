@@ -1,0 +1,5 @@
+{
+  "title": "Weather Request Panel",
+  "description": "Interactive panel for picking date and location and showing weather API results.",
+  "lightning:type": "@apexClassType/c__WeatherPanelState"
+}

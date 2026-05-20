@@ -1,0 +1,85 @@
+<template>
+    <div class="wrp-panel">
+        <header class="wrp-header">
+            <h2 class="wrp-title">{title}</h2>
+            <p class="wrp-prompt">{prompt}</p>
+        </header>
+
+        <template lwc:if={showForm}>
+            <div class="wrp-form">
+                <lightning-combobox
+                    label="Location"
+                    value={location}
+                    options={locationOptions}
+                    onchange={handleLocationChange}
+                    disabled={inputsDisabled}
+                    required
+                ></lightning-combobox>
+
+                <lightning-input
+                    type="date"
+                    label="Date"
+                    value={weatherDate}
+                    onchange={handleDateChange}
+                    disabled={inputsDisabled}
+                    required
+                ></lightning-input>
+
+                <template lwc:if={validationMessage}>
+                    <p class="wrp-validation" role="alert">{validationMessage}</p>
+                </template>
+
+                <template lwc:if={errorMessage}>
+                    <div class="wrp-error" role="alert">
+                        <p>{errorMessage}</p>
+                        <lightning-button
+                            label="Retry"
+                            variant="brand"
+                            onclick={handleRetry}
+                            disabled={inputsDisabled}
+                        ></lightning-button>
+                    </div>
+                </template>
+
+                <div class="wrp-actions">
+                    <lightning-button
+                        label="Request"
+                        variant="brand"
+                        onclick={handleRequest}
+                        disabled={inputsDisabled}
+                    ></lightning-button>
+                </div>
+
+                <template lwc:if={isLoading}>
+                    <div class="wrp-loading">
+                        <lightning-spinner alternative-text="Fetching weather" size="small"></lightning-spinner>
+                        <p>Fetching weather…</p>
+                    </div>
+                </template>
+            </div>
+        </template>
+
+        <template lwc:if={showResults}>
+            <div class="wrp-results">
+                <p class="wrp-status">Success — showing forecast.</p>
+                <div class="wrp-result-card">
+                    <h3>{result.location}</h3>
+                    <p class="wrp-result-when">{result.weatherDate}</p>
+                    <p class="wrp-result-temps">
+                        Min: {result.minTemperatureC}°C ({result.minTemperatureF}°F)
+                    </p>
+                    <p class="wrp-result-temps">
+                        Max: {result.maxTemperatureC}°C ({result.maxTemperatureF}°F)
+                    </p>
+                    <template lwc:if={result.description}>
+                        <p class="wrp-result-description">{result.description}</p>
+                    </template>
+                </div>
+                <lightning-button
+                    label="New search"
+                    onclick={handleNewSearch}
+                ></lightning-button>
+            </div>
+        </template>
+    </div>
+</template>

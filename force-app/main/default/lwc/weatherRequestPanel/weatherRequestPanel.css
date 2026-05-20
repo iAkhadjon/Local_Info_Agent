@@ -1,0 +1,88 @@
+.wrp-panel {
+    display: block;
+    padding: var(--slds-g-spacing-medium, 0.75rem);
+    border: 1px solid var(--slds-g-color-border-base-1, #c9c9c9);
+    border-radius: var(--slds-g-radius-border-2, 0.25rem);
+    background: var(--slds-g-color-surface-1, #ffffff);
+    max-width: 36rem;
+}
+
+.wrp-header {
+    margin-bottom: var(--slds-g-spacing-small, 0.5rem);
+}
+
+.wrp-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.wrp-prompt {
+    font-size: 0.875rem;
+    color: var(--slds-g-color-neutral-base-50, #444444);
+    margin: 0;
+}
+
+.wrp-form {
+    display: grid;
+    gap: var(--slds-g-spacing-small, 0.5rem);
+}
+
+.wrp-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.wrp-loading {
+    display: flex;
+    align-items: center;
+    gap: var(--slds-g-spacing-small, 0.5rem);
+    padding-top: var(--slds-g-spacing-small, 0.5rem);
+}
+
+.wrp-validation {
+    color: var(--slds-g-color-error-base-40, #ba0517);
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+.wrp-error {
+    border: 1px solid var(--slds-g-color-error-base-40, #ba0517);
+    border-radius: var(--slds-g-radius-border-2, 0.25rem);
+    padding: var(--slds-g-spacing-small, 0.5rem);
+    background: var(--slds-g-color-error-container-1, #fde7e9);
+    display: grid;
+    gap: var(--slds-g-spacing-x-small, 0.25rem);
+}
+
+.wrp-results {
+    display: grid;
+    gap: var(--slds-g-spacing-small, 0.5rem);
+}
+
+.wrp-status {
+    margin: 0;
+    font-weight: 600;
+    color: var(--slds-g-color-success-base-40, #2e844a);
+}
+
+.wrp-result-card {
+    border: 1px solid var(--slds-g-color-border-base-1, #c9c9c9);
+    border-radius: var(--slds-g-radius-border-2, 0.25rem);
+    padding: var(--slds-g-spacing-small, 0.5rem);
+    display: grid;
+    gap: var(--slds-g-spacing-x-small, 0.25rem);
+}
+
+.wrp-result-card h3 {
+    margin: 0;
+    font-size: 0.9375rem;
+}
+
+.wrp-result-when,
+.wrp-result-temps,
+.wrp-result-description {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--slds-g-color-neutral-base-50, #444444);
+}
