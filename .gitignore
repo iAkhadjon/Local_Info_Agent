@@ -46,3 +46,8 @@ $RECYCLE.BIN/
 **/__pycache__/
 **/.venv/
 **/venv/
+
+# Local-only working docs and in-progress agent bundles (not part of the shipping spec)
+agentforce_lwc_apex_instructions.md
+force-app/main/default/aiAuthoringBundles/API_Call_Display_LWC/
+force-app/main/default/aiAuthoringBundles/Test_for_new_Agent/

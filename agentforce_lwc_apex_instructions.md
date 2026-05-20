@@ -1,4 +1,4 @@
-# Agentforce LWC + Apex Third-Party API Request Panel - Codex Instructions
+# Agentforce LWC + Apex Third-Party API Request Panel - Instructions
 
 ## 1. Goal
 
@@ -46,6 +46,27 @@ User asks agent -> Agentforce Apex action returns a panel model -> Custom Lightn
 ```
 
 The Agentforce invocable action is used to place the interactive panel in the conversation. The actual external API call happens only when the user clicks the button inside the LWC.
+
+
+### Important note about Salesforce's full editor + renderer example
+
+Salesforce's full editor/renderer example is useful, but it is **not the default pattern for this project**.
+
+That Salesforce example uses:
+
+- `editor.json` + `lightning__AgentforceInput` to customize the action input UI.
+- The invocable Apex action to execute after the user submits the input.
+- `renderer.json` + `lightning__AgentforceOutput` to customize the action output UI.
+
+Use that Salesforce pattern only when the agent must receive the external API result as the action output and reason over it in the conversation.
+
+For this project, the stricter requirement is that the LWC owns the loading state and the API call starts only when the user clicks the button inside the card. Therefore, the default implementation must use an **output-only interactive LWC**:
+
+```text
+renderer.json -> eventRequestPanel LWC -> imperative @AuraEnabled Apex -> third-party API -> same LWC renders success/error
+```
+
+Do **not** add `editor.json` or a `lightning__AgentforceInput` LWC to the default implementation unless the product owner explicitly changes the requirement and accepts that Agentforce, not the LWC, controls the action execution period after the form is submitted.
 
 ## 3. Salesforce Concepts To Use
 
@@ -203,6 +224,7 @@ force-app/main/default/lightningTypes/eventRequestPanelType/
   schema.json
   lightningDesktopGenAi/renderer.json
   enhancedWebChat/renderer.json
+  lightningMobileGenAi/renderer.json       # optional, add only if mobile Agentforce is required
 
 manifest/package.xml
 ```
@@ -902,7 +924,7 @@ Create `force-app/main/default/lightningTypes/eventRequestPanelType`.
 
 ### 8.3 enhancedWebChat/renderer.json
 
-Use the same content as `lightningDesktopGenAi/renderer.json` for predictable Enhanced Web Chat behavior.
+Use the same content as `lightningDesktopGenAi/renderer.json` if the component must also work in Agentforce Service Agent through Enhanced Web Chat v2.
 
 ```json
 {
@@ -915,6 +937,35 @@ Use the same content as `lightningDesktopGenAi/renderer.json` for predictable En
   }
 }
 ```
+
+### 8.4 lightningMobileGenAi/renderer.json - optional
+
+Add this folder only if the same action must render in Agentforce mobile channels.
+
+```json
+{
+  "renderer": {
+    "componentOverrides": {
+      "$": {
+        "definition": "c/eventRequestPanel"
+      }
+    }
+  }
+}
+```
+
+### 8.5 Do not add editor.json in the default implementation
+
+The linked Salesforce example shows both top-level `editor.json` and top-level `renderer.json`. For this project, use only `renderer.json` by default.
+
+Reason:
+
+- `editor.json` is for custom action input UI.
+- After an input editor submits, the Agentforce action runs.
+- During that execution period, the input LWC is not the owner of the loading/result experience.
+- The requirement says the LWC must own the loading state and display the success/failure result.
+
+Therefore, the action output should render the interactive LWC, and that LWC should call Apex itself.
 
 ## 9. Agentforce Builder Setup Instructions
 
@@ -934,20 +985,28 @@ Show Event Request Panel
 7. Configure the action output:
    - Output field: `panel`
    - Output rendering: `eventRequestPanelType`
-8. Save and activate or test the agent.
-9. In the agent instructions, include wording similar to:
+8. If Salesforce shows `Unsupported Data Type` in the `Map to Variable` area after selecting a custom Lightning type, do not treat it as a blocker. Save the action and continue.
+9. Reload the Agentforce Builder / agent preview page after saving the action rendering configuration.
+10. Save and activate or test the agent.
+11. In the agent instructions, include wording similar to:
 
 ```text
 When the user asks about upcoming events, event schedules, or event availability, call the Show Event Request Panel action. Do not call the third-party events API directly before the user fills out the form. The displayed LWC collects the required inputs, shows its own loading state, calls Apex, and displays the result or failure state.
 ```
 
-10. Test in Agent Preview:
+12. Test in Agent Preview:
 
 ```text
 Show me upcoming events.
 ```
 
 Expected result: the custom LWC form appears in the chat.
+
+Add this extra subagent instruction if Agentforce tries to ask for the values as plain text instead of displaying the card:
+
+```text
+For upcoming-event searches, always use the Show Event Request Panel action so the user enters Subject, Date, Range, and Option values in the Lightning component. Do not request these fields as ordinary chat text unless the Lightning component fails to render.
+```
 
 ## 10. Named Credential Setup
 
@@ -1042,40 +1101,87 @@ The implementation is complete only when all criteria pass.
 
 Only use this alternative if the product owner accepts that custom loading during the agent-owned Apex call may be limited by the Agentforce runtime.
 
+Use this pattern when the agent must receive the third-party API response as a normal Agentforce action result and reason over it in later messages.
+
 Alternative flow:
 
 ```text
-Agent displays Agentforce input LWC -> User submits chat form -> Agentforce invokes Apex action -> Apex calls external API -> Agentforce displays output LWC
+Agent requests inputs -> lightning__AgentforceInput LWC editor -> valuechange event -> Invocable Apex calls external API -> lightning__AgentforceOutput LWC renderer displays result
 ```
 
 Files for this alternative:
 
 ```text
-lwc/eventSearchInput/
-  target: lightning__AgentforceInput
+force-app/main/default/lwc/eventSearchInput/
+  eventSearchInput.html
+  eventSearchInput.js
+  eventSearchInput.css
+  eventSearchInput.js-meta.xml
 
-lwc/eventSearchResult/
-  target: lightning__AgentforceOutput
+force-app/main/default/lwc/eventSearchResult/
+  eventSearchResult.html
+  eventSearchResult.js
+  eventSearchResult.css
+  eventSearchResult.js-meta.xml
 
-lightningTypes/eventSearchRequestType/
+force-app/main/default/lightningTypes/eventSearchRequestType/
   schema.json
   lightningDesktopGenAi/editor.json
   enhancedWebChat/editor.json
 
-lightningTypes/eventSearchResponseType/
+force-app/main/default/lightningTypes/eventSearchResponseType/
   schema.json
   lightningDesktopGenAi/renderer.json
   enhancedWebChat/renderer.json
 
-classes/EventSearchAction.cls
+force-app/main/default/classes/EventSearchAction.cls
 ```
 
-In this alternative:
+Input editor LWC requirements:
 
-- The input LWC must dispatch `valuechange` as the user changes fields.
-- The Apex invocable action performs the external API call.
-- The result LWC renders `EventSearchResponse`.
-- Loading is primarily controlled by Agentforce/chat runtime after the user submits the action.
+- Use target `lightning__AgentforceInput`.
+- Use `targetType` for the custom Lightning type that the action input expects.
+- Capture user input in the LWC.
+- Dispatch a `valuechange` event whenever input changes so Agentforce receives the latest input value.
+- Stop unwanted propagation when updating the internal value.
+
+Example event shape:
+
+```javascript
+this.dispatchEvent(
+    new CustomEvent('valuechange', {
+        detail: {
+            value: {
+                subject: this.subject,
+                eventDate: this.eventDate,
+                rangeValue: this.rangeValue,
+                selectedOption: this.selectedOption
+            }
+        },
+        bubbles: true,
+        composed: true
+    })
+);
+```
+
+Output renderer LWC requirements:
+
+- Use target `lightning__AgentforceOutput`.
+- Use `sourceType` for the custom Lightning type returned by the action.
+- Render success and failure states based on action output.
+
+Agentforce Builder changes for this alternative:
+
+- Configure `Input Rendering` for the action input field, for example `filters` or `eventSearchRequest`.
+- Configure `Output Rendering` for the action output field, for example `eventSearchResponse`.
+- If Salesforce shows `Unsupported Data Type` in the `Map to Variable` area, save anyway unless there is a separate validation error.
+- Reload the agent page before testing.
+- Add subagent instructions that tell the agent to use the input UI form, not plain text, for the required fields.
+
+Tradeoff:
+
+- Pro: the agent receives the API result as an action output.
+- Con: the LWC no longer fully owns the loading state during the external API call, because the call happens inside the Agentforce action execution.
 
 Do not choose this alternative for the default implementation because the main requirement is LWC-controlled loading.
 
@@ -1112,10 +1218,14 @@ If Lightning Type and LWC cross-reference deployment fails:
   - https://developer.salesforce.com/docs/ai/agentforce/guide/agent-invocablemethod.html
 - Custom Lightning Types for Agentforce action UI:
   - https://developer.salesforce.com/docs/ai/agentforce/guide/lightning-types.html
+- Agentforce custom Lightning Types full editor/renderer example:
+  - https://developer.salesforce.com/docs/ai/agentforce/guide/lightning-types-example-full-editor-renderer.html
 - Apex-based Custom Lightning Types:
   - https://developer.salesforce.com/docs/platform/lightning-types/guide/lightning-types-apex.html
 - Lightning Type UI configuration:
   - https://developer.salesforce.com/docs/platform/lightning-types/guide/lightning-types-ui-config.html
+- Top-level renderer override:
+  - https://developer.salesforce.com/docs/platform/lightning-types/guide/lightning-types-custom-renderer.html
 - LWC `lightning__AgentforceOutput` target:
   - https://developer.salesforce.com/docs/platform/lwc/guide/targets-lightning-agentforce-output.html
 - LWC `lightning__AgentforceInput` target, for the optional alternative:
